@@ -11,6 +11,8 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "prettier": "^3.6.2",
     "nodemon": "^3.1.11"
   }
+ 
 }
