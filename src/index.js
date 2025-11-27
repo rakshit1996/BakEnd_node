@@ -1,5 +1,6 @@
 import connectDB from "./db/index.js";
 import dotenv from 'dotenv';
+import {app} from './app.js';
 
 
 dotenv.config({ 
@@ -7,7 +8,16 @@ dotenv.config({
 });
 
 // execute methode to connect to db
-connectDB();
+connectDB()
+.then(()=>{
+    app.listen(process.env.PORT || 8000,()=>{
+        console.log(` App is running on :: ${process.env.PORT}`)
+    })
+})
+.catch((err)=>{
+    console.log("Mongo db connection failed!!",err);
+    
+});
 
 
 /* ------------------------- another way to connect to db immediatly in this files - we moved this connection db/index
