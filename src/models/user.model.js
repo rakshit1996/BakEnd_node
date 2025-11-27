@@ -47,7 +47,7 @@ const UserSchema = new Schema(
     }, {timestamps: true}
 );
 
-// midle ware and encryption of password using bcrypt library
+// hooks && midle ware and encryption of password using bcrypt library
 UserSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
     this.password = bcrypt.hash(this.password,10)
