@@ -9,14 +9,6 @@ const registerUser = asyncHandler(async (req,res)=>{
     //Step1: get details from the user 
 
     const {fullname , email, username , password } = req.body
-    console.log(req.body);
-    console.log("email",email);
-    /* ---one way to check the api error for validation 
-    if(fullname == ""){
-        throw new ApiError(400,"Fullname is required")
-    } 
-    */
-
      // validation -(not empty)
     if(
         [fullname,username,email,password].some((field) => field?.trim() === "")  // some methode check if any of the fields are empty if yes then retuen boolean
@@ -26,7 +18,7 @@ const registerUser = asyncHandler(async (req,res)=>{
 
     
     // check if user is already existing ( username and email)
-    const existedUser  = User.findOne({
+    const existedUser  = await User.findOne({
         $or: [{email}, {username}]
     })
 
@@ -43,26 +35,28 @@ const registerUser = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"avatar file is required")
     }
     // upload them to cloudnary,avatart
-    const avatar = await uploadonCloudinary(avatartLocalPath);
+    const avataroncloud = await uploadonCloudinary(avatartLocalPath);
     const coverImage = await uploadonCloudinary(coverImageLocalPath);
-    if(!avatar){
+    if(!avataroncloud){
         throw new ApiError(400,"avatar file is required");
         
     }
     //create user object -create entry in db
     const userdetails = await User.create({
         fullname,
-        avatar:avatar.url,
+        avatar:avataroncloud.url,
         coverImage: coverImage?.url || "",
         email,
         password,
-        username:username.toLowercase()
+        username:username.toLowerCase()
     });
    
     // remove password and refresh token field from the response  check for user creation and return response
-     const createdUser = User.findById(userdetails._id).select(
+     const createdUser = await User.findById(userdetails._id).select(
         "-password -refreshToken"
     );  
+      console.log('useris created',createdUser)
+   
     if(!createdUser){
         throw new ApiError(500,"User could not be registerd ; something went wrong")
     }

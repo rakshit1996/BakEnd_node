@@ -13,11 +13,11 @@ const uploadonCloudinary = async(localFilePath)=>{
     try {
         if(!localFilePath) return null;
         // upload file on cloudinary
-        const response = cloudinary.uploader
+        const response =await cloudinary.uploader
         .upload(localFilePath,{
             resource_type:'auto'
         })
-        console.log("file is uploaded on lcoudinary",response.url);
+        console.log("file is uploaded on coudinary",response.url);
         return response;
 
     } catch (error) {
