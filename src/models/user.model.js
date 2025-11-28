@@ -47,10 +47,11 @@ const UserSchema = new Schema(
 );
 
 // hooks && midle ware and encryption of password using bcrypt library
-UserSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
-    this.password = await bcrypt.hash(this.password,10)
-        next();
+UserSchema.pre("save", async function() {
+    if (!this.isModified("password")) {
+        return;
+    }
+    this.password = await bcrypt.hash(this.password, 10);
 });
 
 // custom methods to check password
@@ -76,16 +77,16 @@ UserSchema.methods.generateAccessToken =   function(){
 }
 
 // genereating refresh token
-UserSchema.methods.generateRefreshToken =  function(){
-    jwt.sign(
+UserSchema.methods.generateRefreshToken = function() {
+    return jwt.sign(
         {
-            _id : this._id
+            _id: this._id
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
-    )
-}
+    );
+};
 export const User = mongoose.model("User",UserSchema);
 
