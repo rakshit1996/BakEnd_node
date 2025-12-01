@@ -267,11 +267,13 @@ const getCurrentUser = asyncHandler( async(req,res) =>{
 
 const updateAccountDetails = asyncHandler(async(req,res)=>{
     const {fullname,email} = req.body
+    // console.log(req.body);
+    // console.log(req.user?._id);
 
     if(!fullname || !email) {
         throw new ApiError(400,"fullname and email are required")
     }
-   const user = User.findByIdAndUpdate(
+   const user = await User.findByIdAndUpdate(
                         req.user?._id,
                         {$set:
                                 {
@@ -351,6 +353,7 @@ export {
     refreshAccessToken,
     changeuserCurrentPassword,
     getCurrentUser,
+    updateAccountDetails,
     updateUserAvatar,
     udpatecoverImage
     
