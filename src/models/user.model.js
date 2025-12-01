@@ -51,13 +51,19 @@ UserSchema.pre("save", async function() {
     if (!this.isModified("password")) {
         return;
     }
+    // console.log("first",this.password); this is the original password before hahing
     this.password = await bcrypt.hash(this.password, 10);
+    // console.log("second",this.password); this.password is hashed
+    
+    
 });
 
 // custom methods to check password
 
 UserSchema.methods.isPasswordCorrect = async function(password){
+    //  console.log(this.password); Encrypted password
     return await bcrypt.compare(password,this.password);
+   
 };
 //generating access tooken
 UserSchema.methods.generateAccessToken =   function(){
