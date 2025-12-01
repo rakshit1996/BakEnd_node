@@ -186,45 +186,47 @@ const logoutUser =  asyncHandler(async(req,res)=>{
      .json(new ApiResponse(200,{},"User logged out"))
 })
 
-const refrehAccessToken = asyncHandler( async(req,res)=>{
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-    if (!incomingRefreshToken) {
-        throw new ApiError(401,"unauthorized request")
-    } 
-//  incoming new refreshtoken
-  try {
-     const decodedToken=  jwt.varifyJWT( incomingRefreshToken,
-                     process.env.REFRESH_TOKEN_SECRET
-                  );
-     const user = await User.findById(decodedToken?._id);
-     if(!user){
-       throw new ApiError(401,"Invalid refresh token")
-     }
-  //    compare new incoming refresh token with the exsisting refreshcode in the database 
-      if(incomingRefreshToken !== user?.refreshToken){
-          throw new ApiError(401,"refresh token is expired or used")
-      }
-  
-      const options = {
-                      httpOnly: true,
-                      secure : true
-                      }
-  
-     const {accessToken,newrefreshToken} = await generateAccessTokenAndRefresgTokens(user._id);
-  
-      res.status(200)
-      .cookie("accessToken",accessToken)
-      .cookie("refershToken",newrefreshToken)
-      .json(new Response(
-          200,
-          {accessToken, refreshToken: newrefreshToken},
-          "Acess token refreshed"
-  
-      ))
-  } catch (error) {
-    throw new ApiError(401,error.message || "Invalida refresh token")
-  }
+const refreshAccessToken = asyncHandler( async(req, res)=>{
+    try {
+
+    const incomingRefreshToken    = req.cookies.refreshToken || req.body.refreshToken;
+    if(!incomingRefreshToken){
+        throw new ApiError(401,"Unauthorized request")
+    }
+
+    const decodedToken = jwt.verify(incomingRefreshToken,
+               process.env.ACCESS_TOKEN_SECRET)
+               
+    const user = await findById(decodedToken?._id)
+    if(!user){
+        throw new ApiError(401,"Invalid refresh token")
+    }
+
+    if(incomingRefreshToken !== user?.refreshToken){
+        throw new ApiError(401,"Refresg token is expired")
+    }
+
+    const options = {
+                    httpOnly: true,
+                    secure : true
+                    }
+
+    const {accessToken,newrefreshToken} = await generateAccessTokenAndRefresgTokens(user._id);
+    
+    return res.status(200)
+             .cookie("accessToken",accessToken,options )
+             .cookie("refreshToken",newrefreshToken,options)
+             .json(new Response(
+                200,
+                {accessToken, refreshToken : newrefreshToken},
+                "Access token refreshed"
+             ))
+
+    } catch (error) {
+        throw new ApiError(401, error?.message || " No new refreshAccessToken")
+    }
+
 })
 
 
@@ -232,5 +234,7 @@ export {
     registerUser,
     loginUser,
     logoutUser,
-    refrehAccessToken
+    refreshAccessToken
+    
+    
 };
