@@ -4,6 +4,23 @@ import {User} from '../models/user.model.js';
 import {uploadonCloudinary} from '../utils/cloudnary.js';
 import {ApiResponse}  from '../utils/AprResponse.js';
 
+const generateAccessTokenAndRefresgTokens = async(userId)=>{
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken =  user.generateRefreshToken();
+        // save access and refresh token in db
+        user.refreshToken = refreshToken; 
+        await user.save({validateBeforeSave:false});
+
+        return {accessToken,refreshToken};
+    } catch (error)
+     {
+        throw new ApiError(500,"something went wrong whhile generating refresh and access token")
+    }
+};
+
+
 const registerUser = asyncHandler(async (req,res)=>{
     
     //Step1: get details from the user 
@@ -79,4 +96,91 @@ const registerUser = asyncHandler(async (req,res)=>{
 
 });
 
-export {registerUser};
+const loginUser = asyncHandler(async(req,res)=>{
+    // req body ->data
+    // username or email
+    // find user 
+    // check password
+    // acess and refresh
+    // send cookie
+
+    // requesting the fields from reqbody
+    const {username , email, password} = req.body;
+
+    // user name or email is required for login
+    if(!(username || email)){
+        throw new ApiError(400, "username or email is required")
+    };
+    const user = await User.findOne({
+        $or : [{username},{email}]
+    })
+    if(!user){
+        throw new ApiError(404,"user does not exists")
+    }
+    const isPasswordValid = await user.isPasswordCorrect(password);
+    if(!isPasswordValid){
+        throw new   ApiError(401,"Invalid password")
+    }
+
+    //  run the function to create access and refresh token for user id
+    const {refreshToken,accessToken}  = await generateAccessTokenAndRefresgTokens(user._id);
+
+    // db call to find the user to compare the tokens
+    const loggedInUser = await User.findById(user._id)
+                            .select("-password -refreshToken");
+
+    const options = {
+                    httpOnly : true,
+                    secure : true
+                    };
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken,options)  // setting access token
+    .cookie("refreshToken",refreshToken,options)
+    .json(
+        new ApiResponse( 200,
+                         {user: loggedInUser,accessToken,refreshToken},
+                         "user Logged in sucessfully"
+                        )
+    );
+
+
+                
+
+
+});
+
+const logoutUser =  asyncHandler(async(req,res)=>{
+
+    //  to logout user we need to clear cookies and refreshtoken 
+
+    //How to read User from here since there is no user input logout: midle ware concept is used to logout user  --- (since we do not have user form to logout we need to use the middle ware to read the user)
+   await User.findOneAndUpdate(
+        req.user._id,
+        {
+            $set :{
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        }
+
+    );
+
+    const options = {
+        httpOnly : true,
+        secure : true
+    }
+     return res
+     .status(200)
+     .clearCookie("accessToken",options)
+     .clearCookie("refreshToken",options)
+     .json(new ApiResponse(200,{},"User logged out"))
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+};
